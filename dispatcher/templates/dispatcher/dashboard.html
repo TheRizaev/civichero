@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CivicHero - Панель диспетчера 103</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; }
+        .header { background: #2c3e50; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .header h1 { font-size: 24px; }
+        .online-info { background: #27ae60; padding: 8px 15px; border-radius: 20px; font-size: 14px; }
+        .main-container { display: flex; height: calc(100vh - 70px); }
+        .map-container { flex: 1; position: relative; }
+        #map { width: 100%; height: 100%; }
+        .sidebar { width: 400px; background: white; overflow-y: auto; box-shadow: -2px 0 5px rgba(0,0,0,0.1); }
+        .create-call-btn { background: #e74c3c; color: white; border: none; padding: 15px; width: 100%; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.3s; }
+        .create-call-btn:hover { background: #c0392b; }
+        .calls-list { padding: 15px; }
+        .call-item { background: white; border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .call-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .call-id { font-weight: bold; font-size: 16px; }
+        .threat-badge { padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+        .threat-low { background: #3498db; color: white; }
+        .threat-medium { background: #f39c12; color: white; }
+        .threat-high { background: #e67e22; color: white; }
+        .threat-critical { background: #e74c3c; color: white; }
+        .call-info { font-size: 14px; color: #555; line-height: 1.6; }
+        .call-info strong { color: #2c3e50; }
+        .status-badge { display: inline-block; padding: 4px 10px; border-radius: 10px; font-size: 12px; margin-top: 8px; }
+        .status-created { background: #95a5a6; color: white; }
+        .status-sent_to_doctors { background: #3498db; color: white; }
+        .status-accepted { background: #f39c12; color: white; }
+        .status-on_way { background: #e67e22; color: white; }
+        .status-on_site { background: #c0392b; color: white; }
+        .status-completed { background: #27ae60; color: white; }
+        .assign-btn { background: #3498db; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; margin-top: 10px; font-size: 13px; }
+        .assign-btn:hover { background: #2980b9; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+        .modal-content { background: white; margin: 50px auto; padding: 30px; width: 500px; border-radius: 10px; max-height: 90vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .close { font-size: 28px; font-weight: bold; cursor: pointer; color: #999; }
+        .close:hover { color: #000; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; color: #2c3e50; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; }
+        .form-group textarea { resize: vertical; min-height: 80px; }
+        .submit-btn { background: #27ae60; color: white; border: none; padding: 12px 30px; border-radius: 5px; cursor: pointer; font-size: 16px; width: 100%; }
+        .submit-btn:hover { background: #229954; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚑 CivicHero - Панель диспетчера 103</h1>
+        <div class="online-info">✓ Врачей онлайн: <span id="online-count">{{ online_doctors.count }}</span></div>
+    </div>
+    
+    <div class="main-container">
+        <div class="map-container">
+            <div id="map"></div>
+        </div>
+        
+        <div class="sidebar">
+            <button class="create-call-btn" onclick="openCreateCallModal()">➕ Создать вызов</button>
+            
+            <div class="calls-list" id="calls-list">
+                {% for call in calls %}
+                <div class="call-item">
+                    <div class="call-header">
+                        <span class="call-id">Вызов #{{ call.id }}</span>
+                        <span class="threat-badge threat-{{ call.threat_level }}">
+                            {% if call.threat_level == 'low' %}Низкая
+                            {% elif call.threat_level == 'medium' %}Средняя
+                            {% elif call.threat_level == 'high' %}Высокая
+                            {% elif call.threat_level == 'critical' %}Критическая
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="call-info">
+                        <strong>Пациент:</strong> {{ call.patient_name }}, {{ call.patient_age }} лет<br>
+                        <strong>Пол:</strong> {% if call.patient_gender == 'male' %}Мужской{% else %}Женский{% endif %}<br>
+                        <strong>Проблема:</strong> {{ call.illness_description }}<br>
+                        <strong>Адрес:</strong> {{ call.address }}<br>
+                        <span class="status-badge status-{{ call.status }}">
+                            {% if call.status == 'created' %}Создан
+                            {% elif call.status == 'sent_to_doctors' %}Отправлен врачам
+                            {% elif call.status == 'accepted' %}Принят врачом
+                            {% elif call.status == 'on_way' %}Врач в пути
+                            {% elif call.status == 'on_site' %}Врач на месте
+                            {% elif call.status == 'completed' %}Завершен
+                            {% endif %}
+                        </span>
+                    </div>
+                    {% if call.status == 'created' %}
+                    <button class="assign-btn" onclick="assignToCivicHero({{ call.id }})">Передать CivicHero</button>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <div id="createCallModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Создать новый вызов</h2>
+                <span class="close" onclick="closeCreateCallModal()">&times;</span>
+            </div>
+            <form id="createCallForm">
+                <div class="form-group">
+                    <label>Имя пациента *</label>
+                    <input type="text" id="patient_name" required>
+                </div>
+                <div class="form-group">
+                    <label>Возраст *</label>
+                    <input type="number" id="patient_age" required min="0" max="150">
+                </div>
+                <div class="form-group">
+                    <label>Пол *</label>
+                    <select id="patient_gender" required>
+                        <option value="">Выберите пол</option>
+                        <option value="male">Мужской</option>
+                        <option value="female">Женский</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Что случилось *</label>
+                    <textarea id="condition" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Адрес *</label>
+                    <input type="text" id="address" required>
+                </div>
+                <div class="form-group">
+                    <label>Уровень угрозы *</label>
+                    <select id="threat_level" required>
+                        <option value="">Выберите уровень</option>
+                        <option value="low">Низкая</option>
+                        <option value="medium">Средняя</option>
+                        <option value="high">Высокая</option>
+                        <option value="critical">Критическая</option>
+                    </select>
+                </div>
+                <button type="submit" class="submit-btn">Создать вызов</button>
+            </form>
+        </div>
+    </div>
+    
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const map = L.map('map').setView([{{ tashkent_center.lat }}, {{ tashkent_center.lng }}], 12);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution: '© OpenStreetMap contributors'}).addTo(map);
+        let selectedLocation = null;
+        let marker = null;
+        
+        function loadCallsOnMap() {
+            fetch('/api/calls/')
+                .then(response => response.json())
+                .then(data => {
+                    data.calls.forEach(call => {
+                        if (call.latitude && call.longitude) {
+                            const icon = L.divIcon({html: '🚑', className: 'call-marker', iconSize: [30, 30]});
+                            L.marker([call.latitude, call.longitude], {icon: icon})
+                                .bindPopup(`<strong>Вызов #${call.id}</strong><br>${call.patient_name}, ${call.patient_age} лет<br>${call.address}`)
+                                .addTo(map);
+                        }
+                    });
+                });
+        }
+        
+        loadCallsOnMap();
+        
+        map.on('click', function(e) {
+            selectedLocation = e.latlng;
+            if (marker) map.removeLayer(marker);
+            marker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map);
+        });
+        
+        function openCreateCallModal() {
+            document.getElementById('createCallModal').style.display = 'block';
+        }
+        
+        function closeCreateCallModal() {
+            document.getElementById('createCallModal').style.display = 'none';
+        }
+        
+        document.getElementById('createCallForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const data = {
+                patient_name: document.getElementById('patient_name').value,
+                patient_age: parseInt(document.getElementById('patient_age').value),
+                patient_gender: document.getElementById('patient_gender').value,
+                condition: document.getElementById('condition').value,
+                address: document.getElementById('address').value,
+                threat_level: document.getElementById('threat_level').value,
+                latitude: selectedLocation ? selectedLocation.lat : {{ tashkent_center.lat }},
+                longitude: selectedLocation ? selectedLocation.lng : {{ tashkent_center.lng }}
+            };
+            
+            fetch('/api/calls/create/', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    alert('Вызов успешно создан!');
+                    location.reload();
+                } else {
+                    alert('Ошибка: ' + result.error);
+                }
+            });
+        });
+        
+        function assignToCivicHero(callId) {
+            if (confirm('Передать этот вызов врачам CivicHero?')) {
+                fetch(`/api/calls/${callId}/assign/`, {method: 'POST'})
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        alert('Вызов передан врачам CivicHero!');
+                        location.reload();
+                    } else {
+                        alert('Ошибка: ' + result.error);
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>
