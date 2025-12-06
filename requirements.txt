@@ -5,6 +5,7 @@ Pillow
 aiohttp
 aiofiles
 gunicorn
+requests
 whitenoise
 psycopg2-binary
 dj-database-url
