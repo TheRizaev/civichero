@@ -1,6 +1,10 @@
-django
+django==5.0
 pydantic
-aiogram
+aiogram==3.4.1
 Pillow
 aiohttp
 aiofiles
+gunicorn
+whitenoise
+psycopg2-binary
+dj-database-url
