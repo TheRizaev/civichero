@@ -1,4 +1,3 @@
 #!/usr/bin/env bash
-# Запуск через supervisor
-
-exec supervisord -c supervisord.conf
+python telegram_bot.py &
+gunicorn config.wsgi:application --bind 0.0.0.0:$PORT
