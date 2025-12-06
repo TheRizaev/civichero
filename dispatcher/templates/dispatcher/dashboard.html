@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uz">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CivicHero - Dispatcher Panel 103</title>
+    <title>CivicHero - Dispetcher Paneli 103</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -53,8 +53,8 @@
 
 <body>
     <div class="header">
-        <h1>🚑 CivicHero - Dispatcher Panel</h1>
-        <div class="online-info">✓ Doctors online: <span id="online-count">{{ online_doctors.count }}</span></div>
+        <h1>🚑 CivicHero - Dispetcher Paneli</h1>
+        <div class="online-info">✓ Onlayn shifokorlar: <span id="online-count">{{ online_doctors.count }}</span></div>
     </div>
 
     <div class="main-container">
@@ -63,39 +63,39 @@
         </div>
 
         <div class="sidebar">
-            <button class="create-call-btn" onclick="openCreateCallModal()">➕ Create Call</button>
+            <button class="create-call-btn" onclick="openCreateCallModal()">➕ Chaqiruv yaratish</button>
 
             <div class="calls-list" id="calls-list">
                 {% for call in calls %}
                 <div class="call-item">
                     <div class="call-header">
-                        <span class="call-id">Call #{{ call.id }}</span>
+                        <span class="call-id">Chaqiruv #{{ call.id }}</span>
                         <span class="threat-badge threat-{{ call.threat_level }}">
-                            {% if call.threat_level == 'low' %}Low
-                            {% elif call.threat_level == 'medium' %}Medium
-                            {% elif call.threat_level == 'high' %}High
-                            {% elif call.threat_level == 'critical' %}Critical
+                            {% if call.threat_level == 'low' %}Past
+                            {% elif call.threat_level == 'medium' %}O'rta
+                            {% elif call.threat_level == 'high' %}Yuqori
+                            {% elif call.threat_level == 'critical' %}Kritik
                             {% endif %}
                         </span>
                     </div>
                     <div class="call-info">
-                        <strong>Patient:</strong> {{ call.patient_name }}, {{ call.patient_age }} y/o<br>
-                        <strong>Gender:</strong> {% if call.patient_gender == 'male' %}Male{% else %}Female{% endif %}<br>
-                        <strong>Condition:</strong> {{ call.illness_description }}<br>
-                        <strong>Address:</strong> {{ call.address }}<br>
+                        <strong>Bemor:</strong> {{ call.patient_name }}, {{ call.patient_age }} yosh<br>
+                        <strong>Jinsi:</strong> {% if call.patient_gender == 'male' %}Erkak{% else %}Ayol{% endif %}<br>
+                        <strong>Holati:</strong> {{ call.illness_description }}<br>
+                        <strong>Manzil:</strong> {{ call.address }}<br>
 
                         <span class="status-badge status-{{ call.status }}">
-                            {% if call.status == 'created' %}Created
-                            {% elif call.status == 'sent_to_doctors' %}Sent to doctors
-                            {% elif call.status == 'accepted' %}Accepted
-                            {% elif call.status == 'on_way' %}Doctor on the way
-                            {% elif call.status == 'on_site' %}Doctor on site
-                            {% elif call.status == 'completed' %}Completed
+                            {% if call.status == 'created' %}Yaratildi
+                            {% elif call.status == 'sent_to_doctors' %}Shifokorlarga yuborildi
+                            {% elif call.status == 'accepted' %}Qabul qilindi
+                            {% elif call.status == 'on_way' %}Shifokor yo'lda
+                            {% elif call.status == 'on_site' %}Shifokor yetib bordi
+                            {% elif call.status == 'completed' %}Yakunlandi
                             {% endif %}
                         </span>
                     </div>
                     {% if call.status == 'created' %}
-                    <button class="assign-btn" onclick="assignToCivicHero({{ call.id }})">Send to CivicHero</button>
+                    <button class="assign-btn" onclick="assignToCivicHero({{ call.id }})">CivicHero-ga yuborish</button>
                     {% endif %}
                 </div>
                 {% endfor %}
@@ -106,52 +106,52 @@
     <div id="createCallModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Create New Call</h2>
+                <h2>Yangi chaqiruv yaratish</h2>
                 <span class="close" onclick="closeCreateCallModal()">&times;</span>
             </div>
 
             <form id="createCallForm">
                 <div class="form-group">
-                    <label>Patient name *</label>
+                    <label>Bemor ismi *</label>
                     <input type="text" id="patient_name" required>
                 </div>
 
                 <div class="form-group">
-                    <label>Age *</label>
+                    <label>Yoshi *</label>
                     <input type="number" id="patient_age" required min="0" max="150">
                 </div>
 
                 <div class="form-group">
-                    <label>Gender *</label>
+                    <label>Jinsi *</label>
                     <select id="patient_gender" required>
-                        <option value="">Select gender</option>
-                        <option value="male">Male</option>
-                        <option value="female">Female</option>
+                        <option value="">Jinsni tanlang</option>
+                        <option value="male">Erkak</option>
+                        <option value="female">Ayol</option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label>What happened *</label>
+                    <label>Nima sodir bo'ldi *</label>
                     <textarea id="condition" required></textarea>
                 </div>
 
                 <div class="form-group">
-                    <label>Address *</label>
+                    <label>Manzil *</label>
                     <input type="text" id="address" required>
                 </div>
 
                 <div class="form-group">
-                    <label>Threat level *</label>
+                    <label>Xavf darajasi *</label>
                     <select id="threat_level" required>
-                        <option value="">Select level</option>
-                        <option value="low">Low</option>
-                        <option value="medium">Medium</option>
-                        <option value="high">High</option>
-                        <option value="critical">Critical</option>
+                        <option value="">Darajani tanlang</option>
+                        <option value="low">Past</option>
+                        <option value="medium">O'rta</option>
+                        <option value="high">Yuqori</option>
+                        <option value="critical">Kritik</option>
                     </select>
                 </div>
 
-                <button type="submit" class="submit-btn">Create Call</button>
+                <button type="submit" class="submit-btn">Chaqiruv yaratish</button>
             </form>
         </div>
     </div>
@@ -176,7 +176,7 @@
                         if (call.latitude && call.longitude) {
                             const icon = L.divIcon({html: '🚑', className: 'call-marker', iconSize: [30, 30]});
                             L.marker([call.latitude, call.longitude], {icon: icon})
-                                .bindPopup(`<strong>Call #${call.id}</strong><br>${call.patient_name}, ${call.patient_age} y/o<br>${call.address}`)
+                                .bindPopup(`<strong>Chaqiruv #${call.id}</strong><br>${call.patient_name}, ${call.patient_age} yosh<br>${call.address}`)
                                 .addTo(map);
                         }
                     });
@@ -221,25 +221,24 @@
             .then(response => response.json())
             .then(result => {
                 if (result.success) {
-                    alert('Call successfully created!');
+                    alert('Chaqiruv muvaffaqiyatli yaratildi!');
                     location.reload();
                 } else {
-                    alert('Error: ' + result.error);
+                    alert('Xatolik: ' + result.error);
                 }
             });
         });
 
         function assignToCivicHero(callId) {
-            if (confirm('Send this call to CivicHero doctors?')) {
-                fetch(`/api/calls/${callId}/assign/
-`, {method: 'POST'})
+            if (confirm('Ushbu chaqiruvni CivicHero shifokorlariga yuborasizmi?')) {
+                fetch(`/api/calls/${callId}/assign/`, {method: 'POST'})
                 .then(response => response.json())
                 .then(result => {
                     if (result.success) {
-                        alert('Call sent to CivicHero doctors!');
+                        alert('Chaqiruv CivicHero shifokorlariga yuborildi!');
                         location.reload();
                     } else {
-                        alert('Error: ' + result.error);
+                        alert('Xatolik: ' + result.error);
                     }
                 });
             }
