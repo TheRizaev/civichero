@@ -91,11 +91,9 @@ def assign_to_civichero(request, call_id):
             'error': 'Call is already being processed'
         }, status=400)
     
-    # Update status
     call.status = 'sent_to_doctors'
     call.save()
-    
-    # Send request to bot
+    # Отправляем боту
     try:
         response = requests.post(
             f"{BOT_HTTP_URL}/notify_call",
