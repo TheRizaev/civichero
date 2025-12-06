@@ -9,9 +9,7 @@ import requests
 import os
 
 
-# Telegram bot HTTP endpoint
-# В продакшене используйте внутренний URL или настройте переменную окружения
-BOT_HTTP_URL = os.environ.get('BOT_URL', 'http://localhost:8001')
+BOT_HTTP_URL = 'http://localhost:8001'
 
 
 def dashboard(request):
