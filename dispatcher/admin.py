@@ -18,19 +18,19 @@ class CallAdmin(admin.ModelAdmin):
     readonly_fields = ['created_at', 'accepted_at', 'on_site_at', 'completed_at', 'ambulance_called_at']
     
     fieldsets = (
-        ('Информация о пациенте', {
+        ('Patient Information', {
             'fields': ('patient_name', 'patient_age', 'patient_gender', 'illness_description')
         }),
-        ('Местоположение', {
+        ('Location', {
             'fields': ('address', 'latitude', 'longitude')
         }),
-        ('Статус вызова', {
+        ('Call Status', {
             'fields': ('threat_level', 'status', 'assigned_doctor')
         }),
-        ('Временные метки', {
+        ('Timestamps', {
             'fields': ('created_at', 'accepted_at', 'on_site_at', 'completed_at')
         }),
-        ('Отчет', {
+        ('Report', {
             'fields': ('report_photo', 'report_text', 'ambulance_called', 'ambulance_called_at')
         }),
     )

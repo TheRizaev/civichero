@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CivicHero - Панель диспетчера 103</title>
+    <title>CivicHero - Dispatcher Panel 103</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -50,110 +50,124 @@
         .submit-btn:hover { background: #229954; }
     </style>
 </head>
+
 <body>
     <div class="header">
-        <h1>🚑 CivicHero - Панель диспетчера 103</h1>
-        <div class="online-info">✓ Врачей онлайн: <span id="online-count">{{ online_doctors.count }}</span></div>
+        <h1>🚑 CivicHero - Dispatcher Panel</h1>
+        <div class="online-info">✓ Doctors online: <span id="online-count">{{ online_doctors.count }}</span></div>
     </div>
-    
+
     <div class="main-container">
         <div class="map-container">
             <div id="map"></div>
         </div>
-        
+
         <div class="sidebar">
-            <button class="create-call-btn" onclick="openCreateCallModal()">➕ Создать вызов</button>
-            
+            <button class="create-call-btn" onclick="openCreateCallModal()">➕ Create Call</button>
+
             <div class="calls-list" id="calls-list">
                 {% for call in calls %}
                 <div class="call-item">
                     <div class="call-header">
-                        <span class="call-id">Вызов #{{ call.id }}</span>
+                        <span class="call-id">Call #{{ call.id }}</span>
                         <span class="threat-badge threat-{{ call.threat_level }}">
-                            {% if call.threat_level == 'low' %}Низкая
-                            {% elif call.threat_level == 'medium' %}Средняя
-                            {% elif call.threat_level == 'high' %}Высокая
-                            {% elif call.threat_level == 'critical' %}Критическая
+                            {% if call.threat_level == 'low' %}Low
+                            {% elif call.threat_level == 'medium' %}Medium
+                            {% elif call.threat_level == 'high' %}High
+                            {% elif call.threat_level == 'critical' %}Critical
                             {% endif %}
                         </span>
                     </div>
                     <div class="call-info">
-                        <strong>Пациент:</strong> {{ call.patient_name }}, {{ call.patient_age }} лет<br>
-                        <strong>Пол:</strong> {% if call.patient_gender == 'male' %}Мужской{% else %}Женский{% endif %}<br>
-                        <strong>Проблема:</strong> {{ call.illness_description }}<br>
-                        <strong>Адрес:</strong> {{ call.address }}<br>
+                        <strong>Patient:</strong> {{ call.patient_name }}, {{ call.patient_age }} y/o<br>
+                        <strong>Gender:</strong> {% if call.patient_gender == 'male' %}Male{% else %}Female{% endif %}<br>
+                        <strong>Condition:</strong> {{ call.illness_description }}<br>
+                        <strong>Address:</strong> {{ call.address }}<br>
+
                         <span class="status-badge status-{{ call.status }}">
-                            {% if call.status == 'created' %}Создан
-                            {% elif call.status == 'sent_to_doctors' %}Отправлен врачам
-                            {% elif call.status == 'accepted' %}Принят врачом
-                            {% elif call.status == 'on_way' %}Врач в пути
-                            {% elif call.status == 'on_site' %}Врач на месте
-                            {% elif call.status == 'completed' %}Завершен
+                            {% if call.status == 'created' %}Created
+                            {% elif call.status == 'sent_to_doctors' %}Sent to doctors
+                            {% elif call.status == 'accepted' %}Accepted
+                            {% elif call.status == 'on_way' %}Doctor on the way
+                            {% elif call.status == 'on_site' %}Doctor on site
+                            {% elif call.status == 'completed' %}Completed
                             {% endif %}
                         </span>
                     </div>
                     {% if call.status == 'created' %}
-                    <button class="assign-btn" onclick="assignToCivicHero({{ call.id }})">Передать CivicHero</button>
+                    <button class="assign-btn" onclick="assignToCivicHero({{ call.id }})">Send to CivicHero</button>
                     {% endif %}
                 </div>
                 {% endfor %}
             </div>
         </div>
     </div>
-    
+
     <div id="createCallModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Создать новый вызов</h2>
+                <h2>Create New Call</h2>
                 <span class="close" onclick="closeCreateCallModal()">&times;</span>
             </div>
+
             <form id="createCallForm">
                 <div class="form-group">
-                    <label>Имя пациента *</label>
+                    <label>Patient name *</label>
                     <input type="text" id="patient_name" required>
                 </div>
+
                 <div class="form-group">
-                    <label>Возраст *</label>
+                    <label>Age *</label>
                     <input type="number" id="patient_age" required min="0" max="150">
                 </div>
+
                 <div class="form-group">
-                    <label>Пол *</label>
+                    <label>Gender *</label>
                     <select id="patient_gender" required>
-                        <option value="">Выберите пол</option>
-                        <option value="male">Мужской</option>
-                        <option value="female">Женский</option>
+                        <option value="">Select gender</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
                     </select>
                 </div>
+
                 <div class="form-group">
-                    <label>Что случилось *</label>
+                    <label>What happened *</label>
                     <textarea id="condition" required></textarea>
                 </div>
+
                 <div class="form-group">
-                    <label>Адрес *</label>
+                    <label>Address *</label>
                     <input type="text" id="address" required>
                 </div>
+
                 <div class="form-group">
-                    <label>Уровень угрозы *</label>
+                    <label>Threat level *</label>
                     <select id="threat_level" required>
-                        <option value="">Выберите уровень</option>
-                        <option value="low">Низкая</option>
-                        <option value="medium">Средняя</option>
-                        <option value="high">Высокая</option>
-                        <option value="critical">Критическая</option>
+                        <option value="">Select level</option>
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                        <option value="critical">Critical</option>
                     </select>
                 </div>
-                <button type="submit" class="submit-btn">Создать вызов</button>
+
+                <button type="submit" class="submit-btn">Create Call</button>
             </form>
         </div>
     </div>
-    
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
+
         const map = L.map('map').setView([{{ tashkent_center.lat }}, {{ tashkent_center.lng }}], 12);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution: '© OpenStreetMap contributors'}).addTo(map);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
         let selectedLocation = null;
         let marker = null;
-        
+
         function loadCallsOnMap() {
             fetch('/api/calls/')
                 .then(response => response.json())
@@ -162,31 +176,32 @@
                         if (call.latitude && call.longitude) {
                             const icon = L.divIcon({html: '🚑', className: 'call-marker', iconSize: [30, 30]});
                             L.marker([call.latitude, call.longitude], {icon: icon})
-                                .bindPopup(`<strong>Вызов #${call.id}</strong><br>${call.patient_name}, ${call.patient_age} лет<br>${call.address}`)
+                                .bindPopup(`<strong>Call #${call.id}</strong><br>${call.patient_name}, ${call.patient_age} y/o<br>${call.address}`)
                                 .addTo(map);
                         }
                     });
                 });
         }
-        
+
         loadCallsOnMap();
-        
+
         map.on('click', function(e) {
             selectedLocation = e.latlng;
             if (marker) map.removeLayer(marker);
             marker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map);
         });
-        
+
         function openCreateCallModal() {
             document.getElementById('createCallModal').style.display = 'block';
         }
-        
+
         function closeCreateCallModal() {
             document.getElementById('createCallModal').style.display = 'none';
         }
-        
+
         document.getElementById('createCallForm').addEventListener('submit', function(e) {
             e.preventDefault();
+
             const data = {
                 patient_name: document.getElementById('patient_name').value,
                 patient_age: parseInt(document.getElementById('patient_age').value),
@@ -197,7 +212,7 @@
                 latitude: selectedLocation ? selectedLocation.lat : {{ tashkent_center.lat }},
                 longitude: selectedLocation ? selectedLocation.lng : {{ tashkent_center.lng }}
             };
-            
+
             fetch('/api/calls/create/', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -206,24 +221,25 @@
             .then(response => response.json())
             .then(result => {
                 if (result.success) {
-                    alert('Вызов успешно создан!');
+                    alert('Call successfully created!');
                     location.reload();
                 } else {
-                    alert('Ошибка: ' + result.error);
+                    alert('Error: ' + result.error);
                 }
             });
         });
-        
+
         function assignToCivicHero(callId) {
-            if (confirm('Передать этот вызов врачам CivicHero?')) {
-                fetch(`/api/calls/${callId}/assign/`, {method: 'POST'})
+            if (confirm('Send this call to CivicHero doctors?')) {
+                fetch(`/api/calls/${callId}/assign/
+`, {method: 'POST'})
                 .then(response => response.json())
                 .then(result => {
                     if (result.success) {
-                        alert('Вызов передан врачам CivicHero!');
+                        alert('Call sent to CivicHero doctors!');
                         location.reload();
                     } else {
-                        alert('Ошибка: ' + result.error);
+                        alert('Error: ' + result.error);
                     }
                 });
             }

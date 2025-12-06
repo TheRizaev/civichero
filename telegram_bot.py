@@ -4,6 +4,7 @@ import sys
 from datetime import datetime
 from math import radians, cos, sin, asin, sqrt
 
+from aiohttp import web
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
@@ -24,7 +25,8 @@ from asgiref.sync import sync_to_async
 
 
 # Конфигурация
-BOT_TOKEN = "8455100116:AAG5Joe1slEAQGRNPjZ845Apb_M15P5AanE"  # Замените на ваш токен
+BOT_TOKEN = "8455100116:AAG5Joe1slEAQGRNPjZ845Apb_M15P5AanE"
+WEBHOOK_PORT = 8001  # Порт для HTTP сервера
 
 # Инициализация
 bot = Bot(token=BOT_TOKEN)
@@ -61,7 +63,6 @@ def calculate_distance(lat1, lon1, lat2, lon2):
 
 @sync_to_async
 def get_doctor_by_telegram_id(telegram_id):
-    """Получить врача по telegram_id"""
     try:
         return Doctor.objects.get(telegram_id=telegram_id)
     except Doctor.DoesNotExist:
@@ -70,13 +71,11 @@ def get_doctor_by_telegram_id(telegram_id):
 
 @sync_to_async
 def doctor_exists(telegram_id):
-    """Проверить существование врача"""
     return Doctor.objects.filter(telegram_id=telegram_id).exists()
 
 
 @sync_to_async
 def create_doctor(telegram_id, first_name, last_name, phone):
-    """Создать нового врача"""
     return Doctor.objects.create(
         telegram_id=telegram_id,
         first_name=first_name,
@@ -87,7 +86,6 @@ def create_doctor(telegram_id, first_name, last_name, phone):
 
 @sync_to_async
 def toggle_doctor_status(telegram_id):
-    """Переключить статус онлайн врача"""
     doctor = Doctor.objects.get(telegram_id=telegram_id)
     doctor.is_online = not doctor.is_online
     doctor.save()
@@ -96,7 +94,6 @@ def toggle_doctor_status(telegram_id):
 
 @sync_to_async
 def update_doctor_location(telegram_id, latitude, longitude):
-    """Обновить местоположение врача"""
     doctor = Doctor.objects.get(telegram_id=telegram_id)
     doctor.latitude = latitude
     doctor.longitude = longitude
@@ -106,7 +103,6 @@ def update_doctor_location(telegram_id, latitude, longitude):
 
 @sync_to_async
 def get_call_by_id(call_id):
-    """Получить вызов по ID"""
     try:
         return Call.objects.get(id=call_id)
     except Call.DoesNotExist:
@@ -115,19 +111,17 @@ def get_call_by_id(call_id):
 
 @sync_to_async
 def get_online_doctors_list():
-    """Получить список онлайн врачей"""
     return list(Doctor.objects.filter(is_online=True))
 
 
 @sync_to_async
 def accept_call_db(call_id, doctor_telegram_id):
-    """Принять вызов"""
     try:
         call = Call.objects.get(id=call_id)
         doctor = Doctor.objects.get(telegram_id=doctor_telegram_id)
         
         if call.status not in ['created', 'sent_to_doctors']:
-            return None, "Этот вызов уже принят другим врачом"
+            return None, "This call has already been accepted by another doctor."
         
         call.assigned_doctor = doctor
         call.status = 'accepted'
@@ -140,7 +134,6 @@ def accept_call_db(call_id, doctor_telegram_id):
 
 @sync_to_async
 def update_call_on_site(call_id):
-    """Обновить статус: врач на месте"""
     call = Call.objects.get(id=call_id)
     call.status = 'on_site'
     call.on_site_at = django_timezone.now()
@@ -150,7 +143,6 @@ def update_call_on_site(call_id):
 
 @sync_to_async
 def call_ambulance_db(call_id):
-    """Вызвать бригаду"""
     call = Call.objects.get(id=call_id)
     call.ambulance_called = True
     call.ambulance_called_at = django_timezone.now()
@@ -160,7 +152,6 @@ def call_ambulance_db(call_id):
 
 @sync_to_async
 def complete_call_db(call_id):
-    """Завершить вызов"""
     call = Call.objects.get(id=call_id)
     call.status = 'completed'
     call.completed_at = django_timezone.now()
@@ -170,7 +161,6 @@ def complete_call_db(call_id):
 
 @sync_to_async
 def get_doctor_statistics(telegram_id):
-    """Получить статистику врача"""
     doctor = Doctor.objects.get(telegram_id=telegram_id)
     completed_calls_count = Call.objects.filter(
         assigned_doctor=doctor,
@@ -181,13 +171,12 @@ def get_doctor_statistics(telegram_id):
 
 @sync_to_async
 def create_test_call_db():
-    """Создать тестовый вызов"""
     return Call.objects.create(
-        patient_name="Тестовый Пациент",
+        patient_name="Test Patient",
         patient_age=45,
         patient_gender="male",
-        illness_description="Высокое давление",
-        address="ул. Тестовая, 123",
+        illness_description="High blood pressure",
+        address="Test street 123",
         latitude=41.2995,
         longitude=69.2401,
         threat_level="medium"
@@ -197,12 +186,11 @@ def create_test_call_db():
 # ==================== КЛАВИАТУРЫ ====================
 
 def get_main_keyboard(is_online=False):
-    """Главная клавиатура врача"""
     keyboard = ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text="🟢 Онлайн" if not is_online else "🔴 Оффлайн")],
-            [KeyboardButton(text="📍 Отправить местоположение", request_location=True)],
-            [KeyboardButton(text="📊 Мои статистики")],
+            [KeyboardButton(text="🟢 Go online" if not is_online else "🔴 Go offline")],
+            [KeyboardButton(text="📍 Send location", request_location=True)],
+            [KeyboardButton(text="📊 My statistics")],
         ],
         resize_keyboard=True
     )
@@ -210,12 +198,11 @@ def get_main_keyboard(is_online=False):
 
 
 def get_call_keyboard(call_id):
-    """Клавиатура для принятия/отказа от вызова"""
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text="✅ Принять", callback_data=f"accept_{call_id}"),
-                InlineKeyboardButton(text="❌ Отказаться", callback_data=f"decline_{call_id}")
+                InlineKeyboardButton(text="✅ Accept", callback_data=f"accept_{call_id}"),
+                InlineKeyboardButton(text="❌ Decline", callback_data=f"decline_{call_id}")
             ]
         ]
     )
@@ -223,11 +210,10 @@ def get_call_keyboard(call_id):
 
 
 def get_active_call_keyboard():
-    """Клавиатура для активного вызова"""
     keyboard = ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text="📍 Я на месте")],
-            [KeyboardButton(text="🚑 Вызвать бригаду"), KeyboardButton(text="✅ Завершить вызов")],
+            [KeyboardButton(text="📍 I arrived")],
+            [KeyboardButton(text="🚑 Call ambulance"), KeyboardButton(text="✅ Complete call")],
         ],
         resize_keyboard=True
     )
@@ -238,58 +224,52 @@ def get_active_call_keyboard():
 
 @dp.message(Command("start"))
 async def cmd_start(message: Message):
-    """Обработчик команды /start"""
     telegram_id = message.from_user.id
-    
     doctor = await get_doctor_by_telegram_id(telegram_id)
     
     if doctor:
         await message.answer(
-            f"👨‍⚕️ Добро пожаловать, {doctor.first_name}!\n\n"
-            f"Используйте кнопки для управления своим статусом.",
+            f"👨‍⚕️ Welcome, {doctor.first_name}!\n\n"
+            f"Use the buttons to manage your status.",
             reply_markup=get_main_keyboard(doctor.is_online)
         )
     else:
         await message.answer(
-            "👋 Добро пожаловать в CivicHero!\n\n"
-            "Для начала работы вам нужно зарегистрироваться.\n"
-            "Используйте команду /register"
+            "👋 Welcome to CivicHero!\n\n"
+            "To start using the bot, you need to register.\n"
+            "Use the /register command."
         )
 
 
 @dp.message(Command("register"))
 async def cmd_register(message: Message, state: FSMContext):
-    """Начало регистрации врача"""
     telegram_id = message.from_user.id
     
     exists = await doctor_exists(telegram_id)
     if exists:
-        await message.answer("Вы уже зарегистрированы!")
+        await message.answer("You are already registered.")
         return
     
-    await message.answer("Давайте начнем регистрацию.\n\nКак вас зовут? (Имя)")
+    await message.answer("Let's start your registration.\n\nWhat is your first name?")
     await state.set_state(RegistrationStates.waiting_for_first_name)
 
 
 @dp.message(RegistrationStates.waiting_for_first_name)
 async def process_first_name(message: Message, state: FSMContext):
-    """Обработка имени"""
     await state.update_data(first_name=message.text)
-    await message.answer("Фамилия:")
+    await message.answer("Last name:")
     await state.set_state(RegistrationStates.waiting_for_last_name)
 
 
 @dp.message(RegistrationStates.waiting_for_last_name)
 async def process_last_name(message: Message, state: FSMContext):
-    """Обработка фамилии"""
     await state.update_data(last_name=message.text)
-    await message.answer("Номер телефона:")
+    await message.answer("Phone number:")
     await state.set_state(RegistrationStates.waiting_for_phone)
 
 
 @dp.message(RegistrationStates.waiting_for_phone)
 async def process_phone(message: Message, state: FSMContext):
-    """Завершение регистрации"""
     data = await state.get_data()
     
     doctor = await create_doctor(
@@ -301,45 +281,40 @@ async def process_phone(message: Message, state: FSMContext):
     
     await state.clear()
     await message.answer(
-        f"✅ Регистрация завершена!\n\n"
+        f"✅ Registration completed!\n\n"
         f"👨‍⚕️ {doctor.first_name} {doctor.last_name}\n"
         f"📞 {doctor.phone}\n\n"
-        f"Теперь вы можете изменить свой статус на 'Онлайн' для получения вызовов.",
+        f"Now you can go online to receive calls.",
         reply_markup=get_main_keyboard(False)
     )
 
 
 # ==================== УПРАВЛЕНИЕ СТАТУСОМ ====================
 
-@dp.message(F.text.in_(["🟢 Онлайн", "🔴 Оффлайн"]))
+@dp.message(F.text.in_(["🟢 Go online", "🔴 Go offline"]))
 async def toggle_online_status(message: Message):
-    """Переключение онлайн/оффлайн статуса"""
     telegram_id = message.from_user.id
-    
     doctor = await get_doctor_by_telegram_id(telegram_id)
     
     if not doctor:
-        await message.answer("Сначала зарегистрируйтесь с помощью /register")
+        await message.answer("Please register using /register")
         return
     
     doctor = await toggle_doctor_status(telegram_id)
-    
-    status_text = "онлайн" if doctor.is_online else "оффлайн"
+    status_text = "online" if doctor.is_online else "offline"
     await message.answer(
-        f"✅ Ваш статус изменен на: {status_text}",
+        f"✅ Your status is now: {status_text}",
         reply_markup=get_main_keyboard(doctor.is_online)
     )
 
 
 @dp.message(F.location)
 async def update_location(message: Message):
-    """Обновление местоположения врача"""
     telegram_id = message.from_user.id
-    
     doctor = await get_doctor_by_telegram_id(telegram_id)
     
     if not doctor:
-        await message.answer("Сначала зарегистрируйтесь с помощью /register")
+        await message.answer("Please register using /register")
         return
     
     await update_doctor_location(
@@ -347,8 +322,7 @@ async def update_location(message: Message):
         message.location.latitude,
         message.location.longitude
     )
-    
-    await message.answer("✅ Ваше местоположение обновлено!")
+    await message.answer("✅ Your location was updated.")
 
 
 # ==================== УВЕДОМЛЕНИЕ ВРАЧЕЙ ====================
@@ -358,28 +332,33 @@ async def notify_doctors_about_call(call_id):
     try:
         call = await get_call_by_id(call_id)
         if not call:
-            print(f"Вызов {call_id} не найден")
-            return
+            print(f"Call {call_id} not found")
+            return 0
         
         online_doctors = await get_online_doctors_list()
+        notified_count = 0
+        
+        print(f"Found {len(online_doctors)} online doctors")
         
         for doctor in online_doctors:
-            distance = "неизвестно"
+            distance = "unknown"
             if doctor.latitude and doctor.longitude and call.latitude and call.longitude:
                 dist = calculate_distance(
                     doctor.latitude, doctor.longitude,
                     call.latitude, call.longitude
                 )
-                distance = f"{dist} км"
+                distance = f"{dist} km"
+            
+            threat_display = dict(Call.THREAT_LEVELS).get(call.threat_level, call.threat_level)
             
             message_text = (
-                f"🚨 НОВЫЙ ВЫЗОВ #{call.id}\n\n"
-                f"👤 Пациент: {call.patient_name}, {call.patient_age} лет\n"
-                f"⚠️ Проблема: {call.illness_description}\n"
-                f"📍 Адрес: {call.address}\n"
-                f"🚦 Уровень угрозы: {call.get_threat_level_display()}\n"
-                f"📏 Расстояние: {distance}\n\n"
-                f"Примите или откажитесь от вызова:"
+                f"🚨 NEW CALL #{call.id}\n\n"
+                f"👤 Patient: {call.patient_name}, {call.patient_age} y/o\n"
+                f"⚠️ Issue: {call.illness_description}\n"
+                f"📍 Address: {call.address}\n"
+                f"🚦 Threat level: {threat_display}\n"
+                f"📏 Distance: {distance}\n\n"
+                f"Choose Accept or Decline:"
             )
             
             try:
@@ -388,18 +367,46 @@ async def notify_doctors_about_call(call_id):
                     message_text,
                     reply_markup=get_call_keyboard(call.id)
                 )
-            except Exception as e:
-                print(f"Ошибка отправки врачу {doctor.telegram_id}: {e}")
+                notified_count += 1
+            except:
+                pass
+        
+        return notified_count
                 
+    except:
+        return 0
+
+
+# ==================== HTTP ====================
+
+async def handle_notify_call(request):
+    try:
+        data = await request.json()
+        call_id = data.get('call_id')
+        
+        if not call_id:
+            return web.json_response({'success': False, 'error': 'call_id is required'}, status=400)
+        
+        notified_count = await notify_doctors_about_call(call_id)
+        
+        return web.json_response({
+            'success': True,
+            'notified_doctors': notified_count,
+            'message': f'Notified doctors: {notified_count}'
+        })
+        
     except Exception as e:
-        print(f"Ошибка при уведомлении врачей: {e}")
+        return web.json_response({'success': False, 'error': str(e)}, status=500)
 
 
-# ==================== ОБРАБОТКА ВЫЗОВОВ ====================
+async def handle_health(request):
+    return web.json_response({'status': 'ok', 'bot': 'running'})
+
+
+# ==================== ACCEPT CALL ====================
 
 @dp.callback_query(F.data.startswith("accept_"))
 async def accept_call_handler(callback: CallbackQuery, state: FSMContext):
-    """Врач принимает вызов"""
     call_id = int(callback.data.split("_")[1])
     telegram_id = callback.from_user.id
     
@@ -410,83 +417,79 @@ async def accept_call_handler(callback: CallbackQuery, state: FSMContext):
         return
     
     await callback.message.edit_text(
-        f"✅ Вы приняли вызов #{call.id}\n\n"
-        f"Адрес: {call.address}\n\n"
-        f"⏱️ Таймер запущен. Когда прибудете на место, нажмите 'Я на месте'."
+        f"✅ You accepted call #{call.id}\n\n"
+        f"Address: {call.address}\n\n"
+        f"Drive to the patient location and press “I arrived”."
     )
     
     await callback.message.answer(
-        "🚗 Вы в пути к пациенту.",
+        "🚗 You are now on the way.",
         reply_markup=get_active_call_keyboard()
     )
     
-    # Сохраняем информацию о вызове в состоянии
     await state.update_data(active_call_id=call.id, arrival_time=datetime.now())
     await state.set_state(CallStates.on_call)
-    
     await callback.answer()
 
 
 @dp.callback_query(F.data.startswith("decline_"))
 async def decline_call_handler(callback: CallbackQuery):
-    """Врач отказывается от вызова"""
-    await callback.message.edit_text("❌ Вы отказались от вызова")
+    await callback.message.edit_text("❌ You declined the call")
     await callback.answer()
 
 
-@dp.message(F.text == "📍 Я на месте", StateFilter(CallStates.on_call))
+# ==================== ARRIVED ====================
+
+@dp.message(F.text == "📍 I arrived", StateFilter(CallStates.on_call))
 async def arrived_on_site(message: Message, state: FSMContext):
-    """Врач прибыл на место"""
     data = await state.get_data()
     call_id = data.get('active_call_id')
     arrival_time = data.get('arrival_time')
     
     if not call_id:
-        await message.answer("Ошибка: активный вызов не найден")
+        await message.answer("Error: active call not found.")
         return
     
     try:
         await update_call_on_site(call_id)
-        
         time_to_arrival = (datetime.now() - arrival_time).seconds // 60 if arrival_time else 0
         
         await message.answer(
-            f"✅ Вы на месте!\n"
-            f"⏱️ Время в пути: {time_to_arrival} мин\n\n"
-            f"Таймер вызова запущен."
+            f"✅ You arrived!\n"
+            f"⏱️ Travel time: {time_to_arrival} minutes\n\n"
+            f"Call timer started."
         )
-        
-        # Обновляем состояние
         await state.update_data(on_site_time=datetime.now())
-        
     except Exception as e:
-        await message.answer(f"Ошибка: {str(e)}")
+        await message.answer(f"Error: {str(e)}")
 
 
-@dp.message(F.text == "🚑 Вызвать бригаду", StateFilter(CallStates.on_call))
+# ==================== CALL AMBULANCE ====================
+
+@dp.message(F.text == "🚑 Call ambulance", StateFilter(CallStates.on_call))
 async def call_ambulance_handler(message: Message, state: FSMContext):
-    """Вызов бригады скорой помощи"""
     data = await state.get_data()
     call_id = data.get('active_call_id')
     
     if not call_id:
-        await message.answer("Ошибка: активный вызов не найден")
+        await message.answer("Error: active call not found")
         return
     
     try:
         await call_ambulance_db(call_id)
-        await message.answer("✅ Бригада скорой помощи вызвана!")
+        await message.answer("✅ Ambulance has been called!")
     except Exception as e:
-        await message.answer(f"Ошибка: {str(e)}")
+        await message.answer(f"Error: {str(e)}")
 
 
-@dp.message(F.text == "✅ Завершить вызов", StateFilter(CallStates.on_call))
+# ==================== COMPLETE ====================
+
+@dp.message(F.text == "✅ Complete call", StateFilter(CallStates.on_call))
 async def complete_call_request(message: Message, state: FSMContext):
-    """Завершение вызова - запрос фото отчета"""
     await message.answer(
-        "📸 Прикрепите фото отчет о выполненном вызове:",
+        "📸 Please attach a photo report:",
         reply_markup=ReplyKeyboardMarkup(
-            keyboard=[[KeyboardButton(text="❌ Отмена")]],
+            keyboard=[[KeyboardButton(text="❌ Cancel")]],
             resize_keyboard=True
         )
     )
@@ -495,41 +498,35 @@ async def complete_call_request(message: Message, state: FSMContext):
 
 @dp.message(CallStates.waiting_for_report_photo, F.photo)
 async def receive_report_photo(message: Message, state: FSMContext):
-    """Получение фото отчета"""
     data = await state.get_data()
     call_id = data.get('active_call_id')
     on_site_time = data.get('on_site_time')
     
     if not call_id:
-        await message.answer("Ошибка: активный вызов не найден")
+        await message.answer("Error: active call not found")
         return
     
     try:
         call = await complete_call_db(call_id)
-        
         duration = (datetime.now() - on_site_time).seconds // 60 if on_site_time else 0
-        
         doctor = await get_doctor_by_telegram_id(message.from_user.id)
         
         await message.answer(
-            f"✅ Вызов #{call.id} завершен!\n\n"
-            f"⏱️ Длительность: {duration} мин\n"
-            f"{'🚑 Бригада была вызвана' if call.ambulance_called else ''}\n\n"
-            f"Спасибо за работу!",
+            f"✅ Call #{call.id} completed!\n\n"
+            f"⏱️ Duration: {duration} minutes\n"
+            f"{'🚑 Ambulance was called' if call.ambulance_called else ''}\n\n"
+            f"Thank you for your work!",
             reply_markup=get_main_keyboard(doctor.is_online)
         )
-        
         await state.clear()
-        
     except Exception as e:
-        await message.answer(f"Ошибка: {str(e)}")
+        await message.answer(f"Error: {str(e)}")
 
 
-@dp.message(CallStates.waiting_for_report_photo, F.text == "❌ Отмена")
+@dp.message(CallStates.waiting_for_report_photo, F.text == "❌ Cancel")
 async def cancel_completion(message: Message, state: FSMContext):
-    """Отмена завершения вызова"""
     await message.answer(
-        "Завершение отменено. Продолжайте работу с пациентом.",
+        "Completion cancelled. Continue working with the patient.",
         reply_markup=get_active_call_keyboard()
     )
     await state.set_state(CallStates.on_call)
@@ -537,46 +534,59 @@ async def cancel_completion(message: Message, state: FSMContext):
 
 # ==================== СТАТИСТИКА ====================
 
-@dp.message(F.text == "📊 Мои статистики")
+@dp.message(F.text == "📊 My statistics")
 async def show_statistics(message: Message):
-    """Показать статистику врача"""
     telegram_id = message.from_user.id
     
     try:
         doctor, completed_calls = await get_doctor_statistics(telegram_id)
-        
         await message.answer(
-            f"📊 Ваша статистика:\n\n"
-            f"✅ Завершенных вызовов: {completed_calls}\n"
-            f"🟢 Статус: {'Онлайн' if doctor.is_online else 'Оффлайн'}"
+            f"📊 Your statistics:\n\n"
+            f"✅ Completed calls: {completed_calls}\n"
+            f"🟢 Status: {'Online' if doctor.is_online else 'Offline'}"
         )
-    except Exception as e:
-        await message.answer("Сначала зарегистрируйтесь с помощью /register")
+    except:
+        await message.answer("Please register using /register")
 
 
 # ==================== ТЕСТИРОВАНИЕ ====================
 
 @dp.message(Command("test_call"))
 async def test_call(message: Message):
-    """Тестовая команда для создания вызова"""
     try:
-        # Создаем тестовый вызов
         call = await create_test_call_db()
-        
-        # Уведомляем врачей
-        await notify_doctors_about_call(call.id)
-        await message.answer(f"✅ Создан тестовый вызов #{call.id}")
+        notified = await notify_doctors_about_call(call.id)
+        await message.answer(f"✅ Test call #{call.id} created\nNotified doctors: {notified}")
     except Exception as e:
-        await message.answer(f"Ошибка: {str(e)}")
+        await message.answer(f"Error: {str(e)}")
 
 
 # ==================== ЗАПУСК БОТА ====================
 
+async def start_http_server():
+    """Запуск HTTP сервера для приема запросов от Django"""
+    app = web.Application()
+    app.router.add_post('/notify_call', handle_notify_call)
+    app.router.add_get('/health', handle_health)
+    
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, '0.0.0.0', WEBHOOK_PORT)
+    await site.start()
+    print(f"HTTP server running on port {WEBHOOK_PORT}")
+    return runner
+
+
 async def main():
-    """Запуск бота"""
-    print("🤖 Бот запущен!")
-    print("📱 Ожидание сообщений...")
-    await dp.start_polling(bot)
+    """Запуск бота и HTTP сервера"""
+    print("Bot starting...")
+    runner = await start_http_server()
+    print("Waiting for messages...")
+    
+    try:
+        await dp.start_polling(bot)
+    finally:
+        await runner.cleanup()
 
 
 if __name__ == "__main__":

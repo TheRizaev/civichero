@@ -5,10 +5,15 @@ from django.views.decorators.http import require_http_methods
 from .models import Call, Doctor
 from django.utils import timezone
 import json
+import requests
+
+
+# Telegram bot HTTP endpoint
+BOT_HTTP_URL = "http://localhost:8001"
 
 
 def dashboard(request):
-    """Главная страница с картой и списком вызовов"""
+    """Main map dashboard with calls and doctors"""
     calls = Call.objects.all()
     online_doctors = Doctor.objects.filter(is_online=True)
     
@@ -23,7 +28,7 @@ def dashboard(request):
 @csrf_exempt
 @require_http_methods(["POST"])
 def create_call(request):
-    """Создание нового вызова"""
+    """Create a new emergency call"""
     try:
         data = json.loads(request.body)
         
@@ -41,7 +46,7 @@ def create_call(request):
         return JsonResponse({
             'success': True,
             'call_id': call.id,
-            'message': 'Вызов успешно создан'
+            'message': 'Call was successfully created'
         })
     except Exception as e:
         return JsonResponse({
@@ -51,7 +56,7 @@ def create_call(request):
 
 
 def get_calls(request):
-    """API для получения списка всех вызовов"""
+    """API – get all calls"""
     calls = Call.objects.all().select_related('assigned_doctor')
     
     calls_data = []
@@ -77,30 +82,60 @@ def get_calls(request):
 @csrf_exempt
 @require_http_methods(["POST"])
 def assign_to_civichero(request, call_id):
-    """Передать вызов в систему CivicHero (отправка врачам)"""
+    """Send call data to CivicHero bot (notify doctors)"""
     call = get_object_or_404(Call, id=call_id)
     
     if call.status not in ['created', 'sent_to_doctors']:
         return JsonResponse({
             'success': False,
-            'error': 'Вызов уже обрабатывается'
+            'error': 'Call is already being processed'
         }, status=400)
     
-    # Обновляем статус вызова
+    # Update status
     call.status = 'sent_to_doctors'
     call.save()
     
-    # Здесь будет отправка уведомления врачам через Telegram
-    # Это будет обрабатываться ботом
-    
-    return JsonResponse({
-        'success': True,
-        'message': 'Вызов передан врачам CivicHero'
-    })
+    # Send request to bot
+    try:
+        response = requests.post(
+            f"{BOT_HTTP_URL}/notify_call",
+            json={'call_id': call_id},
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            notified_count = result.get('notified_doctors', 0)
+            return JsonResponse({
+                'success': True,
+                'message': f'Call successfully sent to CivicHero. Doctors notified: {notified_count}'
+            })
+        else:
+            return JsonResponse({
+                'success': True,
+                'message': 'Call was created, but a problem occurred while notifying doctors',
+                'warning': response.text
+            })
+            
+    except requests.exceptions.ConnectionError:
+        return JsonResponse({
+            'success': False,
+            'error': 'Telegram bot is not running. Please start telegram_bot.py'
+        }, status=503)
+    except requests.exceptions.Timeout:
+        return JsonResponse({
+            'success': True,
+            'message': 'Call was created, but notification request took too long'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Error while sending notification: {str(e)}'
+        }, status=500)
 
 
 def get_online_doctors(request):
-    """API для получения онлайн врачей"""
+    """API – online doctors"""
     doctors = Doctor.objects.filter(is_online=True)
     
     doctors_data = []
@@ -114,4 +149,3 @@ def get_online_doctors(request):
         })
     
     return JsonResponse({'doctors': doctors_data})
-
