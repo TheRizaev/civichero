@@ -16,8 +16,10 @@ services:
         fromDatabase:
           name: civichero-db
           property: connectionString
-      - key: "8455100116:AAG5Joe1slEAQGRNPjZ845Apb_M15P5AanE"
-        sync: false 
+      - key: BOT_TOKEN
+        sync: false  # Вы добавите это вручную в Render Dashboard
+    
+  # Telegram Bot Background Worker
   - type: worker
     name: civichero-bot
     runtime: python
@@ -30,8 +32,8 @@ services:
         fromDatabase:
           name: civichero-db
           property: connectionString
-      - key: "8455100116:AAG5Joe1slEAQGRNPjZ845Apb_M15P5AanE"
-        sync: false
+      - key: BOT_TOKEN
+        sync: false  # Вы добавите это вручную в Render Dashboard
 
 # PostgreSQL Database
 databases:
