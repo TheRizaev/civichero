@@ -23,10 +23,8 @@ from dispatcher.models import Doctor, Call
 from django.utils import timezone as django_timezone
 from asgiref.sync import sync_to_async
 
-
-# Конфигурация
-BOT_TOKEN = "8455100116:AAG5Joe1slEAQGRNPjZ845Apb_M15P5AanE"
-WEBHOOK_PORT = 8001  # Порт для HTTP сервера
+# Импортируем конфигурацию
+from bot_config import BOT_TOKEN, WEBHOOK_PORT
 
 # Инициализация
 bot = Bot(token=BOT_TOKEN)
