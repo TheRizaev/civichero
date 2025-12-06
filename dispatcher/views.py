@@ -93,7 +93,7 @@ def assign_to_civichero(request, call_id):
     
     call.status = 'sent_to_doctors'
     call.save()
-    # Отправляем боту
+    # Sending to doctors
     try:
         response = requests.post(
             f"{BOT_HTTP_URL}/notify_call",
