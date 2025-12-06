@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Запуск Django и Telegram бота вместе
+# Launch Django and Telegeam bot together
 
 python telegram_bot.py &
 
