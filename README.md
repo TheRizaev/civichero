@@ -1,211 +1,282 @@
-# CivicHero - Система экстренной медицинской помощи
+<p align="center">
+  <img src="https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=white" alt="Django"/>
+  <img src="https://img.shields.io/badge/Telegram-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white" alt="Telegram"/>
+  <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python"/>
+  <img src="https://img.shields.io/badge/Leaflet-199900?style=for-the-badge&logo=leaflet&logoColor=white" alt="Leaflet"/>
+</p>
 
-Платформа CivicHero соединяет диспетчеров службы 103 с врачами через веб-приложение и Telegram-бот.
+<h1 align="center">🚑 CivicHero</h1>
 
-## Возможности
+<p align="center">
+  <strong>Emergency Medical Dispatch System</strong><br>
+  Connecting 103 dispatchers with nearby volunteer doctors via Telegram
+</p>
 
-### Веб-приложение для диспетчера (Django)
-- 🗺️ Интерактивная карта Ташкента
-- 📞 Создание вызовов скорой помощи
-- 📋 Управление информацией о пациентах
-- ⚠️ Уровни угрозы для жизни
-- 👨‍⚕️ Просмотр онлайн врачей
-- 🚑 Передача вызовов в систему CivicHero
+<p align="center">
+  <img src="https://img.shields.io/badge/status-MVP-orange?style=flat-square" alt="Status: MVP"/>
+  <img src="https://img.shields.io/badge/version-1.0.0-blue?style=flat-square" alt="Version"/>
+  <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License"/>
+</p>
 
-### Telegram-бот для врачей (aiogram)
-- 📝 Регистрация врачей
-- 🟢 Управление статусом (онлайн/оффлайн)
-- 📍 Отслеживание местоположения
-- 🚨 Уведомления о новых вызовах
-- 📏 Расчет расстояния до пациента
-- ⏱️ Таймеры для отслеживания времени
-- 📸 Фото-отчеты о выполненных вызовах
-- 🚑 Возможность вызова бригады
+---
 
-## Установка
 
-### 1. Клонирование и установка зависимостей
 
-```bash
-# Перейдите в директорию проекта
-cd /path/to/civichero
+░█████╗░██╗██╗░░░██╗██╗░█████╗░██╗░░██╗███████╗██████╗░░█████╗░
+██╔══██╗██║██║░░░██║██║██╔══██╗██║░░██║██╔════╝██╔══██╗██╔══██╗
+██║░░╚═╝██║╚██╗░██╔╝██║██║░░╚═╝███████║█████╗░░██████╔╝██║░░██║
+██║░░██╗██║░╚████╔╝░██║██║░░██╗██╔══██║██╔══╝░░██╔══██╗██║░░██║
+╚█████╔╝██║░░╚██╔╝░░██║╚█████╔╝██║░░██║███████╗██║░░██║╚█████╔╝
+░╚════╝░╚═╝░░░╚═╝░░░╚═╝░╚════╝░╚═╝░░╚═╝╚══════╝╚═╝░░╚═╝░╚════╝░
 
-# Установите зависимости
-pip install -r requirements.txt
+
+
+
+## 🎯 About
+
+**CivicHero** is a platform that enables emergency service dispatchers (103) to instantly notify volunteer doctors about urgent calls. Doctors near the patient receive a Telegram notification and can accept the call with a single tap.
+
+### The Problem
+Ambulances can't always arrive on time due to traffic congestion and high demand.
+
+### The Solution  
+A network of volunteer doctors with a mobile app (Telegram bot) who can provide first aid before the ambulance arrives.
+
+---
+
+## ⚡ Key Features
+
+### 🖥️ For Dispatchers
+
+| Feature | Description |
+|---------|-------------|
+| 🗺️ Interactive Map | Live map with all active calls and doctor locations |
+| 📝 Quick Call Creation | Create emergency calls in seconds |
+| 🚦 Threat Levels | Prioritize calls: low → medium → high → critical |
+| 👁️ Real-time Tracking | Monitor call status as it progresses |
+| 👨‍⚕️ Doctor Monitoring | See all online doctors and their locations |
+
+### 📱 For Doctors
+
+| Feature | Description |
+|---------|-------------|
+| 📱 Telegram Bot | Simple, familiar interface — no app download needed |
+| 📍 Geolocation | Automatic distance calculation to patient |
+| ✅ One-tap Response | Accept or decline calls instantly |
+| ⏱️ Time Tracking | Travel time and on-site duration timers |
+| 🚑 Ambulance Backup | Request emergency backup with one button |
+| 📊 Statistics | Track your completed calls and performance |
+
+---
+
+## 🏗️ Architecture
+
+```
+┌─────────────────────┐         ┌─────────────────────┐
+│   Django Web App    │◄───────►│   Telegram Bot      │
+│   (Dispatchers)     │  HTTP   │   (Doctors)         │
+│                     │         │                     │
+│  • Dashboard        │         │  • aiogram 3.x      │
+│  • REST API         │         │  • FSM states       │
+│  • Leaflet Maps     │         │  • Inline keyboards │
+└─────────┬───────────┘         └──────────┬──────────┘
+          │                                │
+          └────────────┬───────────────────┘
+                       │
+              ┌────────▼────────┐
+              │    SQLite DB    │
+              │                 │
+              │  • Doctors      │
+              │  • Calls        │
+              │  • Responses    │
+              └─────────────────┘
 ```
 
-### 2. Настройка базы данных
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Python 3.11+
+- Django 5.x
+- Telegram Bot Token
+
+### Installation
 
 ```bash
-# Применить миграции
-python manage.py makemigrations
+# Clone the repository
+git clone https://github.com/your-username/civichero.git
+cd civichero
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# venv\Scripts\activate   # Windows
+
+# Install dependencies
+pip install -r requirements.txt
+pip install django asgiref requests
+
+# Run migrations
 python manage.py migrate
 
-# Создать суперпользователя для админ-панели (опционально)
+# Create superuser (optional)
 python manage.py createsuperuser
 ```
 
-### 3. Настройка Telegram-бота
+### Running the Application
 
-1. Создайте бота через [@BotFather](https://t.me/BotFather)
-2. Получите токен бота
-3. Откройте файл `telegram_bot.py` и замените `YOUR_BOT_TOKEN_HERE` на ваш токен:
-
-```python
-BOT_TOKEN = "1234567890:ABCdefGHIjklMNOpqrsTUVwxyz"
-```
-
-## Запуск
-
-### Запуск веб-приложения
-
+**Terminal 1 — Django server:**
 ```bash
-# Запустите Django сервер
-python manage.py runserver 0.0.0.0:8000
+python manage.py runserver
 ```
 
-Откройте браузер и перейдите по адресу: `http://localhost:8000`
-
-### Запуск Telegram-бота
-
-В отдельном терминале:
-
+**Terminal 2 — Telegram bot:**
 ```bash
 python telegram_bot.py
 ```
 
-## Использование
+📍 Web Dashboard: `http://localhost:8000/`  
+🤖 Telegram Bot: Find the bot on Telegram and send `/start`
 
-### Для диспетчера (веб-интерфейс)
+---
 
-1. Откройте `http://localhost:8000`
-2. Нажмите "➕ Создать вызов"
-3. Заполните информацию о пациенте:
-   - Имя
-   - Возраст
-   - Пол
-   - Что случилось (описание проблемы)
-   - Адрес
-   - Уровень угрозы
-4. Нажмите на карте для выбора точного местоположения
-5. Создайте вызов
-6. Нажмите "Передать CivicHero" для отправки вызова врачам
+## 📱 Usage
 
-### Для врача (Telegram-бот)
+### For Doctors (Telegram)
 
-1. Найдите бота в Telegram
-2. Отправьте `/start`
-3. Зарегистрируйтесь с помощью `/register`:
-   - Введите имя
-   - Введите фамилию
-   - Введите номер телефона
-   - Введите специализацию
-4. Нажмите "🟢 Онлайн" для получения вызовов
-5. Отправьте местоположение для расчета расстояния
-6. При получении вызова:
-   - Нажмите "✅ Принять" или "❌ Отказаться"
-7. После принятия:
-   - Нажмите "📍 Я на месте" при прибытии
-   - Нажмите "🚑 Вызвать бригаду" при необходимости
-   - Нажмите "✅ Завершить вызов" после оказания помощи
-   - Прикрепите фото-отчет
+```
+/start      — Start / Main menu
+/register   — Register as a new doctor
+/test_call  — Create a test call (for development)
+```
 
-## Структура проекта
+**Workflow:**
+1. 📝 Register via `/register`
+2. 🟢 Tap "Online" to start receiving calls
+3. 📍 Share your location for distance calculation
+4. 🚨 When a call comes in — accept or decline
+5. 📍 Upon arrival — tap "I'm on site"
+6. ✅ After helping — complete the call with a photo report
+
+### For Dispatchers (Web Dashboard)
+
+1. Open the dispatcher dashboard
+2. Click "Create Call"
+3. Fill in patient details
+4. Click on the map to set location
+5. Click "Send to CivicHero"
+6. Doctors receive instant notifications!
+
+---
+
+## 📊 Data Models
+
+### Doctor
+| Field | Type | Description |
+|-------|------|-------------|
+| `telegram_id` | BigInt | Unique Telegram ID |
+| `first_name`, `last_name` | String | Doctor's full name |
+| `phone` | String | Contact phone number |
+| `is_online` | Boolean | Availability status |
+| `latitude`, `longitude` | Float | Last known location |
+
+### Call
+| Field | Type | Description |
+|-------|------|-------------|
+| `patient_name`, `patient_age` | String/Int | Patient details |
+| `illness_description` | Text | Problem description |
+| `address` | Text | Call address |
+| `threat_level` | Enum | `low` / `medium` / `high` / `critical` |
+| `status` | Enum | `created` → `sent_to_doctors` → `accepted` → `on_site` → `completed` |
+| `assigned_doctor` | FK | Assigned doctor |
+
+---
+
+## 🔌 API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/` | Dispatcher dashboard with map |
+| `GET` | `/api/calls/` | List all calls |
+| `POST` | `/api/calls/create/` | Create a new call |
+| `POST` | `/api/calls/{id}/assign/` | Send call to doctors |
+| `GET` | `/api/doctors/online/` | List online doctors |
+
+**Internal Bot API (port 8001):**
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/notify_call` | Notify doctors about a call |
+| `GET` | `/health` | Bot health check |
+
+---
+
+## 🛠️ Tech Stack
+
+- **Backend:** Django 5.x, Python 3.11+
+- **Bot:** aiogram 3.x (async), aiohttp
+- **Database:** SQLite (MVP) → PostgreSQL (prod)
+- **Frontend:** Vanilla JS, Leaflet.js
+- **Maps:** OpenStreetMap
+
+---
+
+## 📁 Project Structure
 
 ```
 civichero/
-├── dispatcher/                 # Django приложение
-│   ├── models.py              # Модели данных (Doctor, EmergencyCall)
-│   ├── views.py               # API и представления
-│   ├── urls.py                # URL маршруты
+├── config/                 # Django configuration
+│   ├── settings.py
+│   ├── urls.py
+│   └── wsgi.py
+├── dispatcher/             # Dispatcher application
+│   ├── models.py          # Doctor, Call, CallResponse
+│   ├── views.py           # API & Dashboard views
+│   ├── admin.py           # Admin panel config
 │   └── templates/
 │       └── dispatcher/
-│           └── dashboard.html # Веб-интерфейс диспетчера
-├── dispatcher_web/            # Настройки Django проекта
-│   ├── settings.py
-│   └── urls.py
-├── telegram_bot.py            # Telegram бот
-├── requirements.txt           # Зависимости
-├── manage.py                  # Django management
-└── README.md                  # Документация
+│           └── dashboard.html
+├── telegram_bot.py         # Telegram bot for doctors
+├── bot_config.py          # Bot configuration
+├── requirements.txt
+├── manage.py
+└── db.sqlite3
 ```
 
-## Модели данных
+---
 
-### Doctor (Врач)
-- telegram_id - ID в Telegram
-- first_name, last_name - Имя и фамилия
-- phone - Телефон
-- specialty - Специализация
-- is_online - Статус онлайн
-- latitude, longitude - Местоположение
+## 🔮 Roadmap
 
-### EmergencyCall (Вызов)
-- patient_name - Имя пациента
-- patient_age - Возраст
-- patient_gender - Пол
-- condition - Описание проблемы
-- address - Адрес
-- latitude, longitude - Координаты
-- threat_level - Уровень угрозы (low/medium/high/critical)
-- status - Статус (pending/assigned/on_way/on_site/completed)
-- assigned_doctor - Назначенный врач
-- Временные метки (created_at, accepted_at, arrived_at, completed_at)
-- report_photo - Фото отчета
-- ambulance_called - Была ли вызвана бригада
+- [ ] 🔐 Dispatcher authentication
+- [ ] 📈 Advanced analytics & dashboards  
+- [ ] 🗄️ PostgreSQL migration
+- [ ] 🔔 Firebase push notifications
+- [ ] 📱 Progressive Web App for dispatchers
+- [ ] 🌐 Multi-language support (Uzbek, Russian)
+- [ ] 🏥 Hospital & clinic integrations
 
-## API Endpoints
+---
 
-- `GET /` - Главная страница диспетчера
-- `GET /api/calls/` - Получить список вызовов
-- `POST /api/calls/create/` - Создать новый вызов
-- `POST /api/calls/<id>/assign/` - Передать вызов врачам
-- `GET /api/doctors/online/` - Получить список онлайн врачей
+## 🤝 Contributing
 
-## Технологии
+Contributions are welcome!
 
-- **Backend**: Django 5.0, Python 3.8+
-- **Frontend**: HTML5, CSS3, JavaScript, Leaflet.js (карты)
-- **Telegram Bot**: aiogram 3.4.1
-- **Database**: SQLite (можно заменить на PostgreSQL/MySQL)
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-## Тестирование
+---
 
-Для тестирования отправки вызовов врачам через бота:
+## 📄 License
 
-```bash
-# В Telegram боте отправьте команду
-/test_call
-```
+Distributed under the MIT License. See `LICENSE` for more information.
 
-Это создаст тестовый вызов и отправит уведомление всем онлайн врачам.
+---
 
-## Возможные улучшения
-
-- [ ] Интеграция с реальными картами (Google Maps, Yandex Maps)
-- [ ] Push-уведомления для веб-приложения
-- [ ] Сохранение фото-отчетов на сервере
-- [ ] История вызовов для каждого врача
-- [ ] Рейтинговая система врачей
-- [ ] Аналитика и статистика
-- [ ] Интеграция с реальной службой 103
-- [ ] Многоязычность (узбекский, русский, английский)
-
-## Безопасность
-
-⚠️ **Важно**: Это прототип для демонстрации. Перед использованием в продакшене:
-
-- Измените SECRET_KEY в settings.py
-- Используйте переменные окружения для секретов
-- Настройте HTTPS
-- Используйте продакшен БД (PostgreSQL)
-- Настройте ALLOWED_HOSTS
-- Включите дополнительные проверки безопасности
-
-## Лицензия
-
-MIT License
-
-## Контакты
-
-Для вопросов и предложений создайте issue в репозитории.
+<p align="center">
+  <strong>🇺🇿 Made in Tashkent with ❤️</strong><br>
+  <sub>CivicHero — because every second counts</sub>
+</p>
