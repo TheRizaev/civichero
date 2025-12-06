@@ -1,5 +1,4 @@
 services:
-  # Django Web Service
   - type: web
     name: civichero-web
     runtime: python
@@ -17,9 +16,8 @@ services:
           name: civichero-db
           property: connectionString
       - key: BOT_TOKEN
-        sync: false  # Вы добавите это вручную в Render Dashboard
+        sync: false 
     
-  # Telegram Bot Background Worker
   - type: worker
     name: civichero-bot
     runtime: python
@@ -33,9 +31,8 @@ services:
           name: civichero-db
           property: connectionString
       - key: BOT_TOKEN
-        sync: false  # Вы добавите это вручную в Render Dashboard
+        sync: false 
 
-# PostgreSQL Database
 databases:
   - name: civichero-db
     databaseName: civichero
