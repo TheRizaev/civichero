@@ -12,7 +12,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import Message, CallbackQuery, ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 
-# Добавляем путь к Django проекту
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 
@@ -23,10 +23,8 @@ from dispatcher.models import Doctor, Call
 from django.utils import timezone as django_timezone
 from asgiref.sync import sync_to_async
 
-# Импортируем конфигурацию
 from bot_config import BOT_TOKEN, WEBHOOK_PORT
 
-# Инициализация
 bot = Bot(token=BOT_TOKEN)
 storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
@@ -45,7 +43,6 @@ class CallStates(StatesGroup):
     on_call = State()
 
 
-# Функция расчета расстояния между координатами
 def calculate_distance(lat1, lon1, lat2, lon2):
     """Рассчитать расстояние между двумя точками по формуле Haversine (в км)"""
     lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
@@ -57,7 +54,7 @@ def calculate_distance(lat1, lon1, lat2, lon2):
     return round(km, 2)
 
 
-# ==================== ASYNC ФУНКЦИИ ДЛЯ РАБОТЫ С БД ====================
+#работа с бд
 
 @sync_to_async
 def get_doctor_by_telegram_id(telegram_id):
@@ -181,8 +178,6 @@ def create_test_call_db():
     )
 
 
-# ==================== КЛАВИАТУРЫ ====================
-
 def get_main_keyboard(is_online=False):
     keyboard = ReplyKeyboardMarkup(
         keyboard=[
@@ -218,7 +213,7 @@ def get_active_call_keyboard():
     return keyboard
 
 
-# ==================== ОБРАБОТЧИКИ КОМАНД ====================
+# обработка команд
 
 @dp.message(Command("start"))
 async def cmd_start(message: Message):
@@ -287,7 +282,7 @@ async def process_phone(message: Message, state: FSMContext):
     )
 
 
-# ==================== УПРАВЛЕНИЕ СТАТУСОМ ====================
+# Управление статусом
 
 @dp.message(F.text.in_(["🟢 Go online", "🔴 Go offline"]))
 async def toggle_online_status(message: Message):
@@ -323,7 +318,7 @@ async def update_location(message: Message):
     await message.answer("✅ Your location was updated.")
 
 
-# ==================== УВЕДОМЛЕНИЕ ВРАЧЕЙ ====================
+# Уведомления врачей
 
 async def notify_doctors_about_call(call_id):
     """Отправить уведомление всем онлайн врачам о новом вызове"""
@@ -375,7 +370,7 @@ async def notify_doctors_about_call(call_id):
         return 0
 
 
-# ==================== HTTP ====================
+# http
 
 async def handle_notify_call(request):
     try:
@@ -401,7 +396,7 @@ async def handle_health(request):
     return web.json_response({'status': 'ok', 'bot': 'running'})
 
 
-# ==================== ACCEPT CALL ====================
+# принятие вызова
 
 @dp.callback_query(F.data.startswith("accept_"))
 async def accept_call_handler(callback: CallbackQuery, state: FSMContext):
@@ -436,7 +431,7 @@ async def decline_call_handler(callback: CallbackQuery):
     await callback.answer()
 
 
-# ==================== ARRIVED ====================
+# прибыл
 
 @dp.message(F.text == "📍 I arrived", StateFilter(CallStates.on_call))
 async def arrived_on_site(message: Message, state: FSMContext):
@@ -462,7 +457,7 @@ async def arrived_on_site(message: Message, state: FSMContext):
         await message.answer(f"Error: {str(e)}")
 
 
-# ==================== CALL AMBULANCE ====================
+# вызов скорой
 
 @dp.message(F.text == "🚑 Call ambulance", StateFilter(CallStates.on_call))
 async def call_ambulance_handler(message: Message, state: FSMContext):
@@ -480,7 +475,7 @@ async def call_ambulance_handler(message: Message, state: FSMContext):
         await message.answer(f"Error: {str(e)}")
 
 
-# ==================== COMPLETE ====================
+# Завершение вызова
 
 @dp.message(F.text == "✅ Complete call", StateFilter(CallStates.on_call))
 async def complete_call_request(message: Message, state: FSMContext):
@@ -530,7 +525,7 @@ async def cancel_completion(message: Message, state: FSMContext):
     await state.set_state(CallStates.on_call)
 
 
-# ==================== СТАТИСТИКА ====================
+# Стаистика
 
 @dp.message(F.text == "📊 My statistics")
 async def show_statistics(message: Message):
@@ -547,7 +542,7 @@ async def show_statistics(message: Message):
         await message.answer("Please register using /register")
 
 
-# ==================== ТЕСТИРОВАНИЕ ====================
+# тесты
 
 @dp.message(Command("test_call"))
 async def test_call(message: Message):
@@ -559,7 +554,7 @@ async def test_call(message: Message):
         await message.answer(f"Error: {str(e)}")
 
 
-# ==================== ЗАПУСК БОТА ====================
+# Запуск бота
 
 async def start_http_server():
     """Запуск HTTP сервера для приема запросов от Django"""
